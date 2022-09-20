@@ -1,5 +1,4 @@
 import asyncio
-import concurrent.futures
 import datetime
 import json
 import logging
