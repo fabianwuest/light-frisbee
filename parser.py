@@ -69,7 +69,7 @@ def get_main_parser():
     sps_start.add_argument('--gpio-pin',
                            action='store',
                            type=int,
-                           default=11,
+                           default=4,
                            help='set gpio pin that the device is connected to'
                            )
 
