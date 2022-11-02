@@ -25,6 +25,12 @@ class RaspiConfig:
         return dataclasses.asdict(self)
 
 
+@dataclass
+class DataPoint:
+    timestamp_enter: float
+    timestamp_exit: float
+
+
 class RecordingInstructions(Enum):
     START = 'start'
     PAUSE = 'pause'

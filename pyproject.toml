@@ -32,4 +32,4 @@ Documentation = "TBD"
 Repository = "TBD"
 
 [project.scripts]
-# Add scripts here.
+light-frisbee = "light_frisbee.main: main"

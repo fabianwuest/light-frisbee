@@ -1,12 +1,15 @@
 import asyncio
 import json
+import logging
+import time
 from datetime import datetime
 
 import websockets
 from websockets.exceptions import ConnectionClosed
 
+import output_handler
 import settings
-from models import RecordingInstructions
+from models import DataPoint, RecordingInstructions
 from output_handler import write_thingspeak
 
 import gpiozero
@@ -45,32 +48,45 @@ async def frisbee_in(websocket: websockets.WebSocketClientProtocol) -> None:
         pass
 
 
-def when_activated(sensor: gpiozero.input_devices.DigitalInputDevice) -> None:
+def when_activated(sensor: gpiozero.input_devices.DigitalInputDevice, datapoint: dict) -> None:
     if not is_recording:
         return
-    print('Object entered')
+    datapoint['timestamp_enter'] = time.time()
+    print(f'Object entered at {datapoint["timestamp_enter"]}')
 
 
-def when_deactivated(sensor: gpiozero.input_devices.DigitalInputDevice) -> None:
+def when_deactivated(sensor: gpiozero.input_devices.DigitalInputDevice,
+                     datapoint: dict,
+                     queue_out: asyncio.Queue) -> None:
     if not is_recording:
         return
-    print('Object left')
+    datapoint['timestamp_exit'] = time.time()
+    queue_out.put_nowait(datapoint)
+    print(f'Object exited at {datapoint["timestamp_exit"]}')
 
 
-def wait_for_active_wrapper(sensor: gpiozero.input_devices.DigitalInputDevice) -> None:
-    sensor.wait_for_active()
+def wait_for_active_wrapper(sensor: gpiozero.input_devices.DigitalInputDevice, loop) -> None:
+    # sensor.wait_for_active()
+    print('waiting for active wrapper')
+    loop.call_soon_threadsafe(sensor.wait_for_active)
 
 
-async def wait_for_inactive_wrapper(sensor: gpiozero.input_devices.DigitalInputDevice) -> None:
-    sensor.wait_for_inactive()
+def wait_for_inactive_wrapper(sensor: gpiozero.input_devices.DigitalInputDevice, loop) -> None:
+    # sensor.wait_for_inactive()
+    print('waiting for inactive wrapper')
+    loop.call_soon_threadsafe(sensor.wait_for_inactive)
 
 
-async def sensor_recorder() -> None:
+async def sensor_recorder(queue_out: asyncio.Queue) -> None:
 
     # setup sensor
-    sensor = gpiozero.DigitalInputDevice(settings.RASPI_CONFIG.gpio_pin, bounce_time=0.01)
-    sensor.when_activated = when_activated
-    sensor.when_deactivated = when_deactivated
+    datapoint = dict(
+        timestamp_enter=None,
+        timestamp_exit=None,
+    )
+    sensor = gpiozero.DigitalInputDevice(settings.RASPI_CONFIG.gpio_pin, bounce_time=0.001)
+    sensor.when_activated = lambda: when_activated(sensor, datapoint)
+    sensor.when_deactivated = lambda: when_deactivated(sensor, datapoint, queue_out)
 
     # coroutine needs to be running for the active and inactive events to be detected
     while True:

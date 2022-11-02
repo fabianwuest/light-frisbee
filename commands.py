@@ -9,6 +9,7 @@ from rich import print as rprint
 
 import input_handler
 import models
+import output_handler
 import settings
 
 
@@ -49,15 +50,19 @@ def start(args):
         thingspeak_config = await websocket.recv()
         print(f'Received ThingSpeak Config: {thingspeak_config}')
 
-        settings.THINGSPEAK_USER_API_KEY = json.loads(thingspeak_config)['config']['api_keys'][0]['api_key']
+        settings.THINGSPEAK_WRITE_API_KEY = json.loads(thingspeak_config)['config']['api_keys'][0]['api_key']
+        settings.THINGSPEAK_CHANNEL_ID = json.loads(thingspeak_config)['config']['id']
 
         # await asyncio.sleep(1)
         # print(websocket.close_code)
         # print(websocket.close_reason)
 
+        queue_out = asyncio.Queue()
+
         await asyncio.gather(
             input_handler.frisbee_in(websocket),
-            input_handler.sensor_recorder(),
+            input_handler.sensor_recorder(queue_out),
+            output_handler.thingspeak_out(queue_out)
         )
 
     asyncio.run(connect())
