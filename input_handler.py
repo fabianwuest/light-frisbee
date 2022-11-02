@@ -17,9 +17,6 @@ import gpiozero
 is_recording = False
 
 
-# Send all possible Instructions in an enum on first connection?
-
-
 # Instructions
 async def frisbee_in(websocket: websockets.WebSocketClientProtocol) -> None:
 
@@ -91,35 +88,3 @@ async def sensor_recorder(queue_out: asyncio.Queue) -> None:
     # coroutine needs to be running for the active and inactive events to be detected
     while True:
         await asyncio.sleep(0.05)  # yield control to event loop
-
-    '''while True:
-
-        while is_recording:
-            
-            await wait_for_active_wrapper(sensor)
-            await wait_for_inactive_wrapper(sensor)
-            
-            """# coroutine needs to be running for the active and inactive events to be detected
-            while True:
-                await asyncio.sleep(0.05)  # yield control to event loop"""
-
-            await asyncio.sleep(0.05)
-
-        await asyncio.sleep(0.05)'''
-
-    """while True:
-
-        while is_recording:
-            # read from sensor
-            data = {'field1': 15}  # Sample
-
-            if not settings.RASPI_CONFIG.no_output:
-                print(data)
-
-            if not settings.RASPI_CONFIG.test_mode:
-                await write_thingspeak(data, datetime.now())  # TODO Blocking. Fix this.
-
-            # await asyncio.sleep(settings.RASPI_CONFIG.sample_wait)
-            await asyncio.sleep(0.05)
-
-        await asyncio.sleep(0.05)"""
